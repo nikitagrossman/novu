@@ -87,6 +87,11 @@ export function TelegramSetupGuide({
 
   const hasCredentials = hasIntegrationCredentials(selectedIntegration?.credentials);
   const isCredentialsSaved = hasCredentials || credentialsSavedLocally;
+  // Set only after a successful setWebhook call; prevents the dashboard from
+  // re-registering a webhook the mobile flow already configured.
+  const hasWebhookSecret =
+    typeof selectedIntegration?.credentials?.token === 'string' &&
+    selectedIntegration.credentials.token.length > 0;
 
   // Poll for credentials only while the sidebar is open AND the user hasn't saved a token yet.
   // Stops the moment the drawer closes or credentials appear.
@@ -139,13 +144,12 @@ export function TelegramSetupGuide({
 
   const isWebhookConfigured = Boolean(configuredWebhookUrl);
 
-  // When credentials already exist (e.g. user revisiting the guide), auto-configure the webhook
-  // so botUsername is populated and the QR code is available for step 3.
+  // Auto-configure only when a Bot Token exists but no webhook secret yet.
   useEffect(() => {
-    if (hasCredentials && !isWebhookConfigured && !isConfiguring) {
+    if (hasCredentials && !hasWebhookSecret && !isWebhookConfigured && !isConfiguring) {
       configureTelegram();
     }
-  }, [hasCredentials, integrationId, isWebhookConfigured, isConfiguring, configureTelegram]);
+  }, [hasCredentials, hasWebhookSecret, integrationId, isWebhookConfigured, isConfiguring, configureTelegram]);
 
   const base = stepOffset;
 
